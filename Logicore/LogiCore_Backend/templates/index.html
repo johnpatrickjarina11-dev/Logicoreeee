@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LogiCore: A Rule-Based Scholarship Decision System</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500&family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginView" class="login-wrap hidden">
+  <form id="loginForm" class="card login" autocomplete="on">
+    <h1>LogiCore</h1>
+    <p class="sub">A Rule-Based Scholarship Decision System</p>
+    <label for="username">Username</label>
+    <input id="username" name="username" autocomplete="username" required>
+    <label for="password">Password</label>
+    <input id="password" name="password" type="password" autocomplete="current-password" required>
+    <p id="loginMsg" class="error" role="alert"></p>
+    <button type="submit" id="loginBtn">Log in</button>
+    <p class="hintline">Demo accounts: admin / admin123 and staff / staff123</p>
+  </form>
+</div>
+
+<!-- APP -->
+<div id="appView" class="app hidden">
+  <aside class="side">
+    <div class="brand"><b>LogiCore</b><span>Scholarship decisions</span></div>
+    <nav class="tabs">
+      <button data-tab="eval" class="on">Evaluate</button>
+      <button data-tab="rules" class="admin-only">Manage rules</button>
+      <button data-tab="report">History and report</button>
+      <button data-tab="tests">Test cases</button>
+    </nav>
+    <p class="foot">Rules decide. Every result shows which rule decided and why.</p>
+    <div class="userbox"><b id="userName"></b><span id="userRole"></span><br><button id="logout">Log out</button></div>
+  </aside>
+
+  <main>
+    <h1>A Rule-Based Scholarship Decision System</h1>
+    <p id="msg" class="msg hidden" role="status"></p>
+
+    <section id="eval">
+      <p class="sub">Enter an applicant. The system checks every rule and picks the highest-priority match.</p>
+      <div class="split">
+        <div class="card">
+          <h2>Applicant</h2>
+          <div class="fields">
+            <div><label for="name">Name</label><input id="name" placeholder="Applicant name" maxlength="80"></div>
+            <div><label for="avg">General average (0 to 100)</label><input id="avg" type="number" min="0" max="100" step="0.01"></div>
+            <div><label for="income">Monthly family income (PHP)</label><input id="income" type="number" min="0"></div>
+            <div><label for="failed">Has a failing grade?</label>
+              <select id="failed"><option value="0">No</option><option value="1">Yes</option></select></div>
+            <div><label for="record">Has a disciplinary record?</label>
+              <select id="record"><option value="0">No</option><option value="1">Yes</option></select></div>
+          </div>
+          <button id="run">Evaluate applicant</button>
+          <p class="hint">Try a sample applicant:</p>
+          <div id="samples" class="samples"></div>
+        </div>
+        <div class="card verdict">
+          <p id="empty" class="empty">No result yet. Fill in the applicant details and press Evaluate applicant.</p>
+          <div id="out" class="hidden">
+            <p id="who" class="who"></p>
+            <h2>Decision</h2>
+            <div id="decision" class="decision"></div>
+            <p id="why" class="sub"></p>
+            <h2>How the rules were checked</h2>
+            <ol id="trace" class="ladder"></ol>
+            <button class="ghost" id="print" style="margin-left:0">Print result</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="rules" class="hidden">
+      <div class="card">
+        <h2>Current rules (highest priority wins)</h2>
+        <div class="tbl"><table>
+          <thead><tr><th>ID</th><th>Name</th><th>Conditions (all must be true)</th><th>Result</th><th>Priority</th><th></th></tr></thead>
+          <tbody id="ruleRows"></tbody>
+        </table></div>
+        <button class="ghost" id="resetRules" style="margin-left:0">Reset to default rules</button>
+      </div>
+      <div class="card">
+        <h2 id="formTitle">Add a new rule</h2>
+        <div class="grid">
+          <div><label for="rName">Rule name</label><input id="rName" maxlength="60" placeholder="e.g. Dean's lister"></div>
+          <div><label for="rResult">Result</label><input id="rResult" maxlength="60" placeholder="e.g. Partial scholarship (25%)"></div>
+          <div><label for="rPri">Priority (higher wins)</label><input id="rPri" type="number" value="30"></div>
+          <div><label for="rReason">Reason shown to user</label><input id="rReason" maxlength="200" placeholder="Why this rule exists"></div>
+        </div>
+        <div id="conds"></div>
+        <button class="ghost" id="addCond" style="margin-left:0">Add condition</button>
+        <button id="saveRule">Save rule</button>
+        <button class="ghost hidden" id="cancelEdit">Cancel edit</button>
+      </div>
+    </section>
+
+    <section id="report" class="hidden">
+      <div class="card">
+        <h2>Summary</h2>
+        <div class="stats" id="stats"></div>
+        <div id="bars"></div>
+      </div>
+      <div class="card">
+        <h2>Decision history</h2>
+        <div class="tbl"><table>
+          <thead><tr><th>Date</th><th>Applicant</th><th>Avg</th><th>Income</th><th>Decision</th><th>Rule</th><th>By</th></tr></thead>
+          <tbody id="history"></tbody>
+        </table></div>
+        <a class="btnlink" id="csv" href="/api/history.csv" download>Export CSV</a>
+        <button class="ghost admin-only" id="clear">Clear history</button>
+      </div>
+    </section>
+
+    <section id="tests" class="hidden">
+      <div class="card">
+        <h2>Test cases</h2>
+        <p class="sub">Six sample applicants are checked against the current rules in the database. Use this table as the testing section of your report. After a rule changes, a failed row shows which sample now gets a different result.</p>
+        <p id="testSummary" class="decision-line"></p>
+        <div class="tbl"><table>
+          <thead><tr><th>Applicant</th><th>Average</th><th>Income</th><th>Failing grade</th><th>Disciplinary record</th><th>Expected</th><th>Actual</th><th>Status</th></tr></thead>
+          <tbody id="testRows"></tbody>
+        </table></div>
+        <button id="runTests">Run tests again</button>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>
