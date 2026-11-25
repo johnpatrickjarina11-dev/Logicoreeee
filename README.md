@@ -1,1 +1,1 @@
-# Logicoreeee
+SCHOOL PURPOSES ONLY <3
